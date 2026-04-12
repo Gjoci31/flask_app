@@ -15,7 +15,7 @@ import shutil
 from ..models import Pass, PassUsage, User, db, EmailSettings
 from ..forms import PassForm, UserForm, EmailSettingsForm, RestoreForm
 from ..utils import send_event_email
-from .. import update_weekly_reminder_schedule
+from .. import update_weekly_reminder_schedule, ensure_database_schema
 from ..email_templates import (
     pass_created_email,
     pass_deleted_email,
@@ -337,6 +337,7 @@ def restore():
             db.session.remove()
             db.engine.dispose()
             uploaded.save(db_file)
+            ensure_database_schema()
             flash('Adatbázis visszaállítva.', 'success')
             return redirect(url_for('admin.email_settings'))
         flash('Nem megfelelő fájl.', 'danger')

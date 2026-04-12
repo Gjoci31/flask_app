@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Esemény aktiválás</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="bg-light">
+    <div class="container mt-4">
+        <a href="{{ url_for('events.admin_events') }}" class="btn btn-secondary btn-sm mb-3">Vissza</a>
+        <h3>{{ event.name }} - aktiválás</h3>
+        <p>{{ event.formatted_time }}</p>
+
+        <table class="table table-bordered bg-white">
+            <thead>
+                <tr>
+                    <th>Felhasználó</th>
+                    <th>Érvényes bérlet</th>
+                    <th>Felhasználható alkalom</th>
+                    <th>Állapot</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <td>{{ row.user.username }}</td>
+                        <td>{% if row.pass_obj %}Igen ({{ row.pass_obj.type }}){% else %}Nincs{% endif %}</td>
+                        <td>{{ row.remaining }}</td>
+                        <td>{% if row.charged %}Levonva{% else %}-{% endif %}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="4">Nincs feliratkozott felhasználó.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <form method="post" action="{{ url_for('events.deduct_event_passes', event_id=event.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-danger" type="submit">Levonás</button>
+        </form>
+    </div>
+</body>
+</html>

@@ -102,6 +102,9 @@ class Event(db.Model):
     end_time = db.Column(db.DateTime, nullable=False)
     capacity = db.Column(db.Integer, nullable=False)
     color = db.Column(db.String(20), nullable=False, default='blue')
+    cancellation_deadline_minutes = db.Column(db.Integer, nullable=False, default=0)
+    is_activated = db.Column(db.Boolean, nullable=False, default=False)
+    deductions_processed = db.Column(db.Boolean, nullable=False, default=False)
     registrations = db.relationship(
         'EventRegistration', backref='event', lazy=True, cascade='all, delete-orphan'
     )
@@ -160,6 +163,8 @@ class EventRegistration(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    charged = db.Column(db.Boolean, nullable=False, default=False)
+    charged_at = db.Column(db.DateTime)
     # ``User.event_registrations`` already adds a backref named ``user``
     # so defining another relationship with the same name causes a
     # ``sqlalchemy.exc.ArgumentError`` during mapper configuration.  The
@@ -167,4 +172,12 @@ class EventRegistration(db.Model):
     # ``EventRegistration`` instances, so the explicit relationship here is
     # unnecessary and leads to conflicts when the models are imported.
 
+
+class PendingRegistration(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(150), nullable=False, unique=True)
+    password_hash = db.Column(db.String(256), nullable=False)
+    password_plain = db.Column(db.String(150))
+    token = db.Column(db.String(128), nullable=False, unique=True)
+    expires_at = db.Column(db.DateTime, nullable=False)
 

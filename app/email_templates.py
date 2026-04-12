@@ -111,3 +111,22 @@ def event_unregister_admin_email(username: str, e) -> str:
         f"{_event_details(e)}"
     )
     return base_email_template("Esemény leiratkozás", content)
+
+
+def event_pass_deducted_user_email(username: str, e, pass_type: str, remaining: int) -> str:
+    content = (
+        f"Kedves {username},<br><br>"
+        f"A(z) {e.name} eseményhez levonás történt a bérletedből.<br>"
+        f"Bérlet: {pass_type}<br>"
+        f"Hátralévő alkalmak: {remaining}<br>"
+        f"Időpont: {e.formatted_time}"
+    )
+    return base_email_template("Bérlet levonás eseményhez", content)
+
+
+def event_activation_admin_email(e, lines: list[str]) -> str:
+    content = (
+        f"A(z) {e.name} esemény levonási listája:<br><br>"
+        + "<br>".join(lines)
+    )
+    return base_email_template("Esemény levonás lista", content)

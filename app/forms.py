@@ -32,9 +32,15 @@ class UserForm(FlaskForm):
 
 
 class LoginForm(FlaskForm):
-    username = StringField('Felhasználónév', validators=[DataRequired()])
+    username = StringField('Felhasználónév vagy email', validators=[DataRequired()])
     password = PasswordField('Jelszó', validators=[DataRequired()])
     submit = SubmitField('Bejelentkezés')
+
+
+class RegistrationForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired()])
+    password = PasswordField('Jelszó', validators=[DataRequired()])
+    submit = SubmitField('Regisztráció')
 
 
 class ForgotPasswordForm(FlaskForm):
@@ -105,6 +111,11 @@ class EventForm(FlaskForm):
     start_time = TimeField('Kezdő időpont', validators=[DataRequired()])
     end_time = TimeField('Vég időpont', validators=[DataRequired()])
     capacity = IntegerField('Létszám', validators=[DataRequired(), NumberRange(min=1)])
+    cancellation_deadline_minutes = IntegerField(
+        'Leiratkozási stop (perc)',
+        validators=[DataRequired(), NumberRange(min=0)],
+        default=0,
+    )
     color = SelectField(
         'Szín',
         choices=[

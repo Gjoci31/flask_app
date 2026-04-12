@@ -12,7 +12,7 @@
         {{ form.hidden_tag() }}
         <h3 class="mb-3 text-center">Bejelentkezés</h3>
         <div class="mb-3">
-            <input type="text" class="form-control" name="username" placeholder="Felhasználónév" required>
+            <input type="text" class="form-control" name="username" placeholder="Felhasználónév vagy email" required>
         </div>
         <div class="mb-3">
             <input type="password" class="form-control" name="password" placeholder="Jelszó" required>
@@ -20,6 +20,9 @@
         <button type="submit" class="btn btn-primary w-100">Bejelentkezés</button>
         <div class="mt-2 text-center">
             <a href="{{ url_for('auth.forgot_password') }}">Elfelejtett jelszó?</a>
+        </div>
+        <div class="mt-2 text-center">
+            <a href="{{ url_for('auth.register') }}">Regisztráció</a>
         </div>
     </form>
 </body>
