@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from ..models import Event, EventRegistration, User, Pass, PassUsage, db
 from ..forms import EventForm
@@ -16,16 +17,26 @@ from ..email_templates import (
 
 
 event_bp = Blueprint('events', __name__)
+APP_TZ = ZoneInfo("Europe/Budapest")
+
+
+def _now_local_naive():
+    """Return the current local time as a naive datetime.
+
+    Event timestamps are stored as naive local datetimes, so we compare
+    against a naive "now" value in the same Europe/Budapest timezone.
+    """
+    return datetime.now(APP_TZ).replace(tzinfo=None)
 
 
 def _get_two_week_range():
-    start = datetime.now().date()
+    start = _now_local_naive().date()
     end = start + timedelta(days=13)
     return start, end
 
 
 def _get_usable_pass(user_id):
-    today = datetime.now().date()
+    today = _now_local_naive().date()
     return (
         Pass.query.filter(
             Pass.user_id == user_id,
@@ -112,7 +123,7 @@ def unregister(event_id):
     reg = EventRegistration.query.filter_by(event_id=event_id, user_id=current_user.id).first_or_404()
     event = reg.event
     deadline = event.start_time - timedelta(minutes=event.cancellation_deadline_minutes)
-    if datetime.now() >= deadline:
+    if _now_local_naive() >= deadline:
         flash(
             'A leiratkozási határidő lejárt ennél az eseménynél.',
             'danger',
@@ -310,7 +321,7 @@ def deduct_event_passes(event_id):
         usage = PassUsage(pass_id=usable_pass.id)
         db.session.add(usage)
         reg.charged = True
-        reg.charged_at = datetime.now()
+        reg.charged_at = _now_local_naive()
         processed += 1
         remaining = usable_pass.total_uses - usable_pass.used
         lines.append(
