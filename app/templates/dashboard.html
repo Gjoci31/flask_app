@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Bérletkezelő</a>
+            <div class="d-flex">
+                <span class="navbar-text text-white me-3">Bejelentkezve: {{ user.username }}</span>
+                <a class="btn btn-outline-light btn-sm" href="/logout">Kilépés</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-5">
+        <h2>Üdvözlünk, {{ user.username }}!</h2>
+        <form method="post" action="{{ url_for('user.toggle_reminder') }}" class="mb-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="enabled" onchange="this.form.submit()" {% if user.weekly_reminder_opt_in %}checked{% endif %}>
+                <label class="form-check-label">Heti emlékeztető email</label>
+            </div>
+        </form>
+        {% if user.role == 'admin' %}
+        <div class="mb-3">
+            <a href="{{ url_for('admin.create_pass') }}" class="btn btn-success btn-sm">Új bérlet</a>
+            <a href="{{ url_for('admin.users') }}" class="btn btn-primary btn-sm">Felhasználók</a>
+            <a href="{{ url_for('admin.email_settings') }}" class="btn btn-secondary btn-sm">Email beállítások</a>
+            <a href="{{ url_for('admin.backup') }}" class="btn btn-danger btn-sm">Backup</a>
+            <a href="{{ url_for('admin.restore') }}" class="btn btn-info btn-sm">Restore</a>
+        </div>
+        {% endif %}
+        <div class="mb-3">
+            {% if user.role == 'admin' %}
+            <a href="{{ url_for('events.admin_events') }}" class="btn btn-warning btn-sm">Időpontok</a>
+            <a href="{{ url_for('events.events') }}" class="btn btn-warning btn-sm ms-2">Naptár</a>
+            {% else %}
+            <a href="{{ url_for('events.events') }}" class="btn btn-warning btn-sm">Időpontok</a>
+            {% endif %}
+        </div>
+        <div class="row">
+        {% for p in passes %}
+            <div class="col-12 col-md-4 mb-3">
+                <div class="card shadow pass-card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ p.type }}</h5>
+                        <p class="card-text">{{ p.start_date }} - {{ p.end_date }}</p>
+                        <p class="card-text">Alkalmak: {{ p.used }} / {{ p.total_uses }}</p>
+                        {% if user.role == 'admin' %}
+                        <p class="card-text">Felhasználó: {{ p.user.username }}</p>
+                        {% endif %}
+                        {% if p.comment %}<p class="card-text"><small>{{ p.comment }}</small></p>{% endif %}
+                        {% if user.role == 'admin' %}
+                            <a href="{{ url_for('admin.verify_pass', pass_id=p.id) }}" class="btn btn-sm btn-warning">Szerkesztés</a>
+                            <a href="{{ url_for('admin.delete_pass', pass_id=p.id) }}" class="btn btn-sm btn-danger">Törlés</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if user.role != 'admin' and p.usages %}
+                <div class="mt-2">
+                    <h6>Felhasználva:</h6>
+                    <ul class="list-unstyled mb-2">
+                    {% for usage in p.usages %}
+                        <li><small>{{ usage.used_on.date() }}</small></li>
+                    {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Email beállítások</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <h3>Email beállítások</h3>
+    <form method="post">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.email_from.label(class="form-label") }}
+            {{ form.email_from(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.email_password.label(class="form-label") }}
+            {{ form.email_password(class="form-control") }}
+        </div>
+        <hr>
+        <div class="form-check">
+            {{ form.user_created_enabled(class="form-check-input") }}
+            {{ form.user_created_enabled.label(class="form-check-label") }}
+        </div>
+        <div class="mb-3">
+            {{ form.user_created_text.label(class="form-label") }}
+            {{ form.user_created_text(class="form-control") }}
+        </div>
+        <div class="form-check">
+            {{ form.user_deleted_enabled(class="form-check-input") }}
+            {{ form.user_deleted_enabled.label(class="form-check-label") }}
+        </div>
+        <div class="mb-3">
+            {{ form.user_deleted_text.label(class="form-label") }}
+            {{ form.user_deleted_text(class="form-control") }}
+        </div>
+        <div class="form-check">
+            {{ form.pass_created_enabled(class="form-check-input") }}
+            {{ form.pass_created_enabled.label(class="form-check-label") }}
+        </div>
+        <div class="mb-3">
+            {{ form.pass_created_text.label(class="form-label") }}
+            {{ form.pass_created_text(class="form-control") }}
+        </div>
+        <div class="form-check">
+            {{ form.pass_deleted_enabled(class="form-check-input") }}
+            {{ form.pass_deleted_enabled.label(class="form-check-label") }}
+        </div>
+        <div class="mb-3">
+            {{ form.pass_deleted_text.label(class="form-label") }}
+            {{ form.pass_deleted_text(class="form-control") }}
+        </div>
+        <div class="form-check">
+            {{ form.pass_used_enabled(class="form-check-input") }}
+            {{ form.pass_used_enabled.label(class="form-check-label") }}
+        </div>
+        <div class="mb-3">
+            {{ form.pass_used_text.label(class="form-label") }}
+            {{ form.pass_used_text(class="form-control") }}
+        </div>
+        <div class="form-check">
+            {{ form.event_signup_user_enabled(class="form-check-input") }}
+            {{ form.event_signup_user_enabled.label(class="form-check-label") }}
+        </div>
+        <div class="mb-3">
+            {{ form.event_signup_user_text.label(class="form-label") }}
+            {{ form.event_signup_user_text(class="form-control") }}
+        </div>
+        <div class="form-check">
+            {{ form.event_signup_admin_enabled(class="form-check-input") }}
+            {{ form.event_signup_admin_enabled.label(class="form-check-label") }}
+        </div>
+        <div class="mb-3">
+            {{ form.event_signup_admin_text.label(class="form-label") }}
+            {{ form.event_signup_admin_text(class="form-control") }}
+        </div>
+        <div class="form-check">
+            {{ form.event_unregister_user_enabled(class="form-check-input") }}
+            {{ form.event_unregister_user_enabled.label(class="form-check-label") }}
+        </div>
+        <div class="mb-3">
+            {{ form.event_unregister_user_text.label(class="form-label") }}
+            {{ form.event_unregister_user_text(class="form-control") }}
+        </div>
+        <div class="form-check">
+            {{ form.event_unregister_admin_enabled(class="form-check-input") }}
+            {{ form.event_unregister_admin_enabled.label(class="form-check-label") }}
+        </div>
+        <div class="mb-3">
+            {{ form.event_unregister_admin_text.label(class="form-label") }}
+            {{ form.event_unregister_admin_text(class="form-control") }}
+        </div>
+        <hr>
+        <div class="form-check">
+            {{ form.weekly_reminder_enabled(class="form-check-input") }}
+            {{ form.weekly_reminder_enabled.label(class="form-check-label") }}
+        </div>
+        <div class="mb-3">
+            {{ form.weekly_reminder_text.label(class="form-label") }}
+            {{ form.weekly_reminder_text(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.weekly_reminder_day.label(class="form-label") }}
+            {{ form.weekly_reminder_day(class="form-select") }}
+        </div>
+        <div class="mb-3">
+            {{ form.weekly_reminder_time.label(class="form-label") }}
+            {{ form.weekly_reminder_time(class="form-control") }}
+        </div>
+        {{ form.submit(class="btn btn-primary") }}
+        <a href="{{ url_for('user.dashboard') }}" class="btn btn-secondary">Vissza</a>
+    </form>
+    <div class="mt-3">
+        <a href="{{ url_for('admin.backup') }}" class="btn btn-danger">Backup</a>
+        <a href="{{ url_for('admin.restore') }}" class="btn btn-primary">Restore</a>
+    </div>
+</div>
+</body>
+</html>
