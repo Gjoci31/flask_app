@@ -38,6 +38,7 @@ class LoginForm(FlaskForm):
 
 
 class RegistrationForm(FlaskForm):
+    username = StringField('Felhasználónév', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired()])
     password = PasswordField('Jelszó', validators=[DataRequired()])
     submit = SubmitField('Regisztráció')

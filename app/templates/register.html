@@ -11,6 +11,14 @@
     <form method="POST" class="p-4 bg-white rounded shadow" style="width: 100%; max-width: 400px;">
         {{ form.hidden_tag() }}
         <h3 class="mb-3 text-center">Regisztráció</h3>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} py-2" role="alert">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <div class="mb-3">{{ form.username(class="form-control", placeholder="Felhasználónév") }}</div>
         <div class="mb-3">{{ form.email(class="form-control", placeholder="Email") }}</div>
         <div class="mb-3">{{ form.password(class="form-control", placeholder="Jelszó") }}</div>
         <button type="submit" class="btn btn-primary w-100">Regisztráció</button>

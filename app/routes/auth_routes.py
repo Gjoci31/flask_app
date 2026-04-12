@@ -21,10 +21,13 @@ def login():
         user = User.query.filter(
             (User.username == identifier) | (User.email == identifier)
         ).first()
-        if user and check_password_hash(user.password_hash, password):
+        if not user:
+            flash('Nincs ilyen felhasználó vagy email cím.', 'danger')
+        elif not check_password_hash(user.password_hash, password):
+            flash('Hibás jelszó.', 'danger')
+        else:
             login_user(user)
             return redirect(url_for('user.dashboard'))
-        flash('Hibás felhasználónév vagy jelszó.')
     return render_template('login.html', form=form)
 
 
@@ -32,22 +35,37 @@ def login():
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
+        username = form.username.data.strip()
         email = form.email.data.strip().lower()
         password = form.password.data
+        pending = PendingRegistration.query.filter_by(email=email).first()
+
+        if User.query.filter_by(username=username).first():
+            flash('Ez a felhasználónév már foglalt.', 'danger')
+            return render_template('register.html', form=form)
+        pending_with_username = PendingRegistration.query.filter_by(
+            username=username
+        ).first()
+        if pending_with_username and (
+            pending is None or pending_with_username.id != pending.id
+        ):
+            flash('Erre a felhasználónévre már folyamatban van regisztráció.', 'danger')
+            return render_template('register.html', form=form)
         if User.query.filter_by(email=email).first():
             flash('Ez az email cím már használatban van.', 'danger')
             return render_template('register.html', form=form)
 
-        pending = PendingRegistration.query.filter_by(email=email).first()
         token = secrets.token_urlsafe(32)
         expires_at = datetime.utcnow() + timedelta(hours=24)
         if pending:
+            pending.username = username
             pending.password_hash = generate_password_hash(password)
             pending.password_plain = password
             pending.token = token
             pending.expires_at = expires_at
         else:
             pending = PendingRegistration(
+                username=username,
                 email=email,
                 password_hash=generate_password_hash(password),
                 password_plain=password,
@@ -85,12 +103,20 @@ def verify_registration(token):
         flash('A megerősítő link lejárt.', 'danger')
         return redirect(url_for('auth.register'))
 
-    base_username = pending.email.split('@')[0]
-    username = base_username
-    idx = 1
-    while User.query.filter_by(username=username).first():
-        idx += 1
-        username = f"{base_username}{idx}"
+    username = (pending.username or '').strip()
+    if not username:
+        flash('Hiányzik a felhasználónév a regisztrációból, kérjük regisztrálj újra.', 'danger')
+        db.session.delete(pending)
+        db.session.commit()
+        return redirect(url_for('auth.register'))
+    if User.query.filter_by(username=username).first():
+        flash(
+            'A választott felhasználónév időközben foglalt lett, kérjük regisztrálj újra.',
+            'danger',
+        )
+        db.session.delete(pending)
+        db.session.commit()
+        return redirect(url_for('auth.register'))
 
     user = User(
         username=username,
