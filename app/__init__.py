@@ -99,7 +99,7 @@ def ensure_database_schema():
         if 'event_signup_user_enabled' not in columns:
             conn.execute(
                 text(
-                    "ALTER TABLE email_settings ADD COLUMN event_signup_user_enabled BOOLEAN DEFAULT 0"
+                    "ALTER TABLE email_settings ADD COLUMN event_signup_user_enabled BOOLEAN DEFAULT 1"
                 )
             )
         if 'event_signup_user_text' not in columns:
@@ -111,7 +111,7 @@ def ensure_database_schema():
         if 'event_signup_admin_enabled' not in columns:
             conn.execute(
                 text(
-                    "ALTER TABLE email_settings ADD COLUMN event_signup_admin_enabled BOOLEAN DEFAULT 0"
+                    "ALTER TABLE email_settings ADD COLUMN event_signup_admin_enabled BOOLEAN DEFAULT 1"
                 )
             )
         if 'event_signup_admin_text' not in columns:
@@ -123,7 +123,7 @@ def ensure_database_schema():
         if 'event_unregister_user_enabled' not in columns:
             conn.execute(
                 text(
-                    "ALTER TABLE email_settings ADD COLUMN event_unregister_user_enabled BOOLEAN DEFAULT 0"
+                    "ALTER TABLE email_settings ADD COLUMN event_unregister_user_enabled BOOLEAN DEFAULT 1"
                 )
             )
         if 'event_unregister_user_text' not in columns:
@@ -135,7 +135,7 @@ def ensure_database_schema():
         if 'event_unregister_admin_enabled' not in columns:
             conn.execute(
                 text(
-                    "ALTER TABLE email_settings ADD COLUMN event_unregister_admin_enabled BOOLEAN DEFAULT 0"
+                    "ALTER TABLE email_settings ADD COLUMN event_unregister_admin_enabled BOOLEAN DEFAULT 1"
                 )
             )
         if 'event_unregister_admin_text' not in columns:
@@ -144,6 +144,16 @@ def ensure_database_schema():
                     "ALTER TABLE email_settings ADD COLUMN event_unregister_admin_text TEXT"
                 )
             )
+        conn.execute(
+            text(
+                "UPDATE email_settings SET "
+                "event_signup_user_enabled = 1, "
+                "event_signup_admin_enabled = 1, "
+                "event_unregister_user_enabled = 1, "
+                "event_unregister_admin_enabled = 1"
+            )
+        )
+
         if 'weekly_reminder_enabled' not in columns:
             conn.execute(
                 text(
