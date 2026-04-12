@@ -32,6 +32,145 @@ scheduler = (
     else None
 )
 
+
+def ensure_database_schema():
+    """Create missing tables/columns for backward-compatible upgrades."""
+    from sqlalchemy import text
+
+    db.create_all()
+    with db.engine.connect() as conn:
+        insp = conn.execute(text("PRAGMA table_info(event)"))
+        columns = [row[1] for row in insp]
+        if 'color' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE event ADD COLUMN color VARCHAR(20) DEFAULT 'blue'"
+                )
+            )
+        if 'cancellation_deadline_minutes' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE event ADD COLUMN cancellation_deadline_minutes INTEGER DEFAULT 0"
+                )
+            )
+        if 'is_activated' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE event ADD COLUMN is_activated BOOLEAN DEFAULT 0"
+                )
+            )
+        if 'deductions_processed' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE event ADD COLUMN deductions_processed BOOLEAN DEFAULT 0"
+                )
+            )
+        insp.close()
+
+        insp = conn.execute(text("PRAGMA table_info(event_registration)"))
+        columns = [row[1] for row in insp]
+        if 'charged' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE event_registration ADD COLUMN charged BOOLEAN DEFAULT 0"
+                )
+            )
+        if 'charged_at' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE event_registration ADD COLUMN charged_at DATETIME"
+                )
+            )
+        insp.close()
+
+        # Ensure weekly_reminder_opt_in exists on the user table
+        insp = conn.execute(text("PRAGMA table_info(user)"))
+        columns = [row[1] for row in insp]
+        if 'weekly_reminder_opt_in' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE user ADD COLUMN weekly_reminder_opt_in BOOLEAN DEFAULT 0"
+                )
+            )
+        insp.close()
+
+        insp = conn.execute(text("PRAGMA table_info(email_settings)"))
+        columns = [row[1] for row in insp]
+        if 'event_signup_user_enabled' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE email_settings ADD COLUMN event_signup_user_enabled BOOLEAN DEFAULT 0"
+                )
+            )
+        if 'event_signup_user_text' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE email_settings ADD COLUMN event_signup_user_text TEXT"
+                )
+            )
+        if 'event_signup_admin_enabled' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE email_settings ADD COLUMN event_signup_admin_enabled BOOLEAN DEFAULT 0"
+                )
+            )
+        if 'event_signup_admin_text' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE email_settings ADD COLUMN event_signup_admin_text TEXT"
+                )
+            )
+        if 'event_unregister_user_enabled' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE email_settings ADD COLUMN event_unregister_user_enabled BOOLEAN DEFAULT 0"
+                )
+            )
+        if 'event_unregister_user_text' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE email_settings ADD COLUMN event_unregister_user_text TEXT"
+                )
+            )
+        if 'event_unregister_admin_enabled' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE email_settings ADD COLUMN event_unregister_admin_enabled BOOLEAN DEFAULT 0"
+                )
+            )
+        if 'event_unregister_admin_text' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE email_settings ADD COLUMN event_unregister_admin_text TEXT"
+                )
+            )
+        if 'weekly_reminder_enabled' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE email_settings ADD COLUMN weekly_reminder_enabled BOOLEAN DEFAULT 0"
+                )
+            )
+        if 'weekly_reminder_text' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE email_settings ADD COLUMN weekly_reminder_text TEXT"
+                )
+            )
+        if 'weekly_reminder_day' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE email_settings ADD COLUMN weekly_reminder_day INTEGER DEFAULT 0"
+                )
+            )
+        if 'weekly_reminder_time' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE email_settings ADD COLUMN weekly_reminder_time TIME"
+                )
+            )
+        conn.commit()
+        insp.close()
+
 def update_weekly_reminder_schedule(app):
     """Configure the weekly reminder job based on current settings."""
     if scheduler is None:
@@ -93,117 +232,7 @@ def create_app():
     # upgrade path without requiring a manual migration step, check for the
     # column and add it if missing.
     with app.app_context():
-        db.create_all()
-
-        # ``PRAGMA table_info`` returns the columns of the given table.  When
-        # the ``color`` column is absent, execute an ``ALTER TABLE`` statement
-        # to add it with the default value ``'blue'`` so existing rows remain
-        # valid and future queries succeed.
-        # SQLAlchemy 2 removed the ``Engine.execute`` helper.  Use an explicit
-        # connection so this code works on newer versions while remaining
-        # compatible with SQLAlchemy 1.x.
-        from sqlalchemy import text
-
-        with db.engine.connect() as conn:
-            insp = conn.execute(text("PRAGMA table_info(event)"))
-            columns = [row[1] for row in insp]
-            if 'color' not in columns:
-                conn.execute(
-                    text(
-                        "ALTER TABLE event ADD COLUMN color VARCHAR(20) DEFAULT 'blue'"
-                    )
-                )
-                conn.commit()
-            insp.close()
-
-            # Ensure weekly_reminder_opt_in exists on the user table
-            insp = conn.execute(text("PRAGMA table_info(user)"))
-            columns = [row[1] for row in insp]
-            if 'weekly_reminder_opt_in' not in columns:
-                conn.execute(
-                    text(
-                        "ALTER TABLE user ADD COLUMN weekly_reminder_opt_in BOOLEAN DEFAULT 0"
-                    )
-                )
-                conn.commit()
-            insp.close()
-
-            insp = conn.execute(text("PRAGMA table_info(email_settings)"))
-            columns = [row[1] for row in insp]
-            if 'event_signup_user_enabled' not in columns:
-                conn.execute(
-                    text(
-                        "ALTER TABLE email_settings ADD COLUMN event_signup_user_enabled BOOLEAN DEFAULT 0"
-                    )
-                )
-            if 'event_signup_user_text' not in columns:
-                conn.execute(
-                    text(
-                        "ALTER TABLE email_settings ADD COLUMN event_signup_user_text TEXT"
-                    )
-                )
-            if 'event_signup_admin_enabled' not in columns:
-                conn.execute(
-                    text(
-                        "ALTER TABLE email_settings ADD COLUMN event_signup_admin_enabled BOOLEAN DEFAULT 0"
-                    )
-                )
-            if 'event_signup_admin_text' not in columns:
-                conn.execute(
-                    text(
-                        "ALTER TABLE email_settings ADD COLUMN event_signup_admin_text TEXT"
-                    )
-                )
-            if 'event_unregister_user_enabled' not in columns:
-                conn.execute(
-                    text(
-                        "ALTER TABLE email_settings ADD COLUMN event_unregister_user_enabled BOOLEAN DEFAULT 0"
-                    )
-                )
-            if 'event_unregister_user_text' not in columns:
-                conn.execute(
-                    text(
-                        "ALTER TABLE email_settings ADD COLUMN event_unregister_user_text TEXT"
-                    )
-                )
-            if 'event_unregister_admin_enabled' not in columns:
-                conn.execute(
-                    text(
-                        "ALTER TABLE email_settings ADD COLUMN event_unregister_admin_enabled BOOLEAN DEFAULT 0"
-                    )
-                )
-            if 'event_unregister_admin_text' not in columns:
-                conn.execute(
-                    text(
-                        "ALTER TABLE email_settings ADD COLUMN event_unregister_admin_text TEXT"
-                    )
-                )
-            if 'weekly_reminder_enabled' not in columns:
-                conn.execute(
-                    text(
-                        "ALTER TABLE email_settings ADD COLUMN weekly_reminder_enabled BOOLEAN DEFAULT 0"
-                    )
-                )
-            if 'weekly_reminder_text' not in columns:
-                conn.execute(
-                    text(
-                        "ALTER TABLE email_settings ADD COLUMN weekly_reminder_text TEXT"
-                    )
-                )
-            if 'weekly_reminder_day' not in columns:
-                conn.execute(
-                    text(
-                        "ALTER TABLE email_settings ADD COLUMN weekly_reminder_day INTEGER DEFAULT 0"
-                    )
-                )
-            if 'weekly_reminder_time' not in columns:
-                conn.execute(
-                    text(
-                        "ALTER TABLE email_settings ADD COLUMN weekly_reminder_time TIME"
-                    )
-                )
-            conn.commit()
-            insp.close()
+        ensure_database_schema()
 
     # Set up weekly reminder scheduler if APScheduler is available
     if scheduler:

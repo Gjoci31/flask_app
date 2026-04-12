@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 
-from ..models import Event, EventRegistration, User, db
+from ..models import Event, EventRegistration, User, Pass, PassUsage, db
 from ..forms import EventForm
 from ..utils import send_event_email
 from ..email_templates import (
@@ -10,6 +10,8 @@ from ..email_templates import (
     event_signup_admin_email,
     event_unregister_user_email,
     event_unregister_admin_email,
+    event_pass_deducted_user_email,
+    event_activation_admin_email,
 )
 
 
@@ -20,6 +22,20 @@ def _get_two_week_range():
     start = datetime.now().date()
     end = start + timedelta(days=13)
     return start, end
+
+
+def _get_usable_pass(user_id):
+    today = datetime.now().date()
+    return (
+        Pass.query.filter(
+            Pass.user_id == user_id,
+            Pass.start_date <= today,
+            Pass.end_date >= today,
+            Pass.used < Pass.total_uses,
+        )
+        .order_by(Pass.end_date.asc(), Pass.id.asc())
+        .first()
+    )
 
 
 @event_bp.route('/events')
@@ -95,6 +111,13 @@ def signup(event_id):
 def unregister(event_id):
     reg = EventRegistration.query.filter_by(event_id=event_id, user_id=current_user.id).first_or_404()
     event = reg.event
+    deadline = event.start_time - timedelta(minutes=event.cancellation_deadline_minutes)
+    if datetime.now() >= deadline:
+        flash(
+            'A leiratkozási határidő lejárt ennél az eseménynél.',
+            'danger',
+        )
+        return redirect(url_for('events.events'))
     db.session.delete(reg)
     db.session.commit()
     send_event_email(
@@ -137,6 +160,7 @@ def create_event():
             end_time=end_dt,
             capacity=form.capacity.data,
             color=form.color.data,
+            cancellation_deadline_minutes=form.cancellation_deadline_minutes.data,
         )
         db.session.add(event)
         db.session.commit()
@@ -165,6 +189,7 @@ def edit_event(event_id):
         event.end_time = datetime.combine(form.date.data, form.end_time.data)
         event.capacity = form.capacity.data
         event.color = form.color.data
+        event.cancellation_deadline_minutes = form.cancellation_deadline_minutes.data
         db.session.commit()
         flash('Esemény frissítve.', 'success')
         return redirect(url_for('events.admin_events'))
@@ -240,3 +265,74 @@ def delete_event(event_id):
     db.session.commit()
     flash('Esemény törölve.', 'success')
     return redirect(url_for('events.admin_events', _anchor=f'event-{event_id}'))
+
+
+@event_bp.route('/admin/events/<int:event_id>/activate')
+@login_required
+def activate_event(event_id):
+    if current_user.role != 'admin':
+        return redirect(url_for('events.events'))
+    event = Event.query.get_or_404(event_id)
+    event.is_activated = True
+    db.session.commit()
+    rows = []
+    for reg in event.registrations:
+        usable_pass = _get_usable_pass(reg.user_id)
+        remaining = 0
+        if usable_pass:
+            remaining = usable_pass.total_uses - usable_pass.used
+        rows.append({
+            'user': reg.user,
+            'pass_obj': usable_pass,
+            'remaining': remaining,
+            'charged': reg.charged,
+        })
+    return render_template('activate_event.html', event=event, rows=rows)
+
+
+@event_bp.route('/admin/events/<int:event_id>/deduct', methods=['POST'])
+@login_required
+def deduct_event_passes(event_id):
+    if current_user.role != 'admin':
+        return redirect(url_for('events.events'))
+    event = Event.query.get_or_404(event_id)
+    lines = []
+    processed = 0
+    for reg in event.registrations:
+        usable_pass = _get_usable_pass(reg.user_id)
+        if reg.charged:
+            lines.append(f"{reg.user.username}: már korábban levonva")
+            continue
+        if not usable_pass:
+            lines.append(f"{reg.user.username}: nincs érvényes bérlet")
+            continue
+        usable_pass.used += 1
+        usage = PassUsage(pass_id=usable_pass.id)
+        db.session.add(usage)
+        reg.charged = True
+        reg.charged_at = datetime.now()
+        processed += 1
+        remaining = usable_pass.total_uses - usable_pass.used
+        lines.append(
+            f"{reg.user.username}: levonva ({usable_pass.type}), maradék: {remaining}"
+        )
+        send_event_email(
+            'pass_used',
+            'Bérlet levonás eseményhez',
+            event_pass_deducted_user_email(reg.user.username, event, usable_pass.type, remaining),
+            reg.user.email,
+        )
+    event.deductions_processed = True
+    db.session.commit()
+
+    admin_emails = [u.email for u in User.query.filter_by(role='admin').all() if u.email]
+    for email in admin_emails:
+        send_event_email(
+            'pass_used',
+            f'Levonás lista - {event.name}',
+            event_activation_admin_email(event, lines),
+            email,
+        )
+
+    flash(f'Levonás kész. Sikeres levonások: {processed}.', 'success')
+    return redirect(url_for('events.activate_event', event_id=event.id))
