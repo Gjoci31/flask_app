@@ -76,16 +76,16 @@ class EmailSettings(db.Model):
     pass_used_enabled = db.Column(db.Boolean, default=False)
     pass_used_text = db.Column(db.Text)
 
-    event_signup_user_enabled = db.Column(db.Boolean, default=False)
+    event_signup_user_enabled = db.Column(db.Boolean, default=True)
     event_signup_user_text = db.Column(db.Text)
 
-    event_signup_admin_enabled = db.Column(db.Boolean, default=False)
+    event_signup_admin_enabled = db.Column(db.Boolean, default=True)
     event_signup_admin_text = db.Column(db.Text)
 
-    event_unregister_user_enabled = db.Column(db.Boolean, default=False)
+    event_unregister_user_enabled = db.Column(db.Boolean, default=True)
     event_unregister_user_text = db.Column(db.Text)
 
-    event_unregister_admin_enabled = db.Column(db.Boolean, default=False)
+    event_unregister_admin_enabled = db.Column(db.Boolean, default=True)
     event_unregister_admin_text = db.Column(db.Text)
 
     weekly_reminder_enabled = db.Column(db.Boolean, default=False)
