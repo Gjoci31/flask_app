@@ -11,6 +11,13 @@
     <form method="POST" class="p-4 bg-white rounded shadow" style="width: 100%; max-width: 400px;">
         {{ form.hidden_tag() }}
         <h3 class="mb-3 text-center">Bejelentkezés</h3>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} py-2" role="alert">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
         <div class="mb-3">
             <input type="text" class="form-control" name="username" placeholder="Felhasználónév vagy email" required>
         </div>

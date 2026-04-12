@@ -171,6 +171,24 @@ def ensure_database_schema():
         conn.commit()
         insp.close()
 
+        insp = conn.execute(text("PRAGMA table_info(pending_registration)"))
+        columns = [row[1] for row in insp]
+        if 'username' not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE pending_registration ADD COLUMN username VARCHAR(150)"
+                )
+            )
+            conn.execute(
+                text(
+                    "UPDATE pending_registration "
+                    "SET username = substr(email, 1, instr(email, '@') - 1) "
+                    "WHERE username IS NULL OR username = ''"
+                )
+            )
+        insp.close()
+        conn.commit()
+
 def update_weekly_reminder_schedule(app):
     """Configure the weekly reminder job based on current settings."""
     if scheduler is None:

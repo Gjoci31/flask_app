@@ -175,9 +175,9 @@ class EventRegistration(db.Model):
 
 class PendingRegistration(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(150), nullable=False)
     email = db.Column(db.String(150), nullable=False, unique=True)
     password_hash = db.Column(db.String(256), nullable=False)
     password_plain = db.Column(db.String(150))
     token = db.Column(db.String(128), nullable=False, unique=True)
     expires_at = db.Column(db.DateTime, nullable=False)
-
