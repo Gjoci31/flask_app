@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 
 from ..models import Event, EventRegistration, User, Pass, PassUsage, db
 from ..forms import EventForm
-from ..utils import send_event_email
+from ..utils import send_email, send_event_email
 from ..email_templates import (
     event_signup_user_email,
     event_signup_admin_email,
@@ -344,8 +344,7 @@ def deduct_event_passes(event_id):
 
     admin_emails = [u.email for u in User.query.filter_by(role='admin').all() if u.email]
     for email in admin_emails:
-        send_event_email(
-            'pass_used',
+        send_email(
             f'Levonás lista - {event.name}',
             event_activation_admin_email(event, lines),
             email,
