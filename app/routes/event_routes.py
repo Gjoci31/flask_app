@@ -53,14 +53,19 @@ def _get_usable_pass(user_id):
 @login_required
 def events():
     start, end = _get_two_week_range()
-    events = (
+    upcoming_events = (
         Event.query.filter(Event.start_time >= start, Event.start_time <= end)
         .order_by(Event.start_time)
         .all()
     )
+    past_events = (
+        Event.query.filter(Event.start_time < start)
+        .order_by(Event.start_time.desc())
+        .all()
+    )
     days = [start + timedelta(days=i) for i in range(14)]
     events_map = {}
-    for e in events:
+    for e in upcoming_events:
         day_idx = (e.start_time.date() - start).days
         start_hour = e.start_time.hour
         end_hour = e.end_time.hour
@@ -80,12 +85,13 @@ def events():
 
     participants = {
         e.id: "<br>".join(reg.user.username for reg in e.registrations) or "nincs"
-        for e in events
+        for e in (upcoming_events + past_events)
     }
 
     return render_template(
         'events.html',
-        events=events,
+        events=upcoming_events,
+        past_events=past_events,
         start=start,
         end=end,
         registrations=registrations,
