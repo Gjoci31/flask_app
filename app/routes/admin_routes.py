@@ -295,7 +295,10 @@ def email_settings():
 
     form = EmailSettingsForm(obj=settings)
     if form.validate_on_submit():
+        current_password = settings.email_password
         form.populate_obj(settings)
+        if not form.email_password.data:
+            settings.email_password = current_password
         db.session.commit()
         update_weekly_reminder_schedule(current_app)
         flash("Beállítások mentve.", "success")
