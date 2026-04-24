@@ -152,14 +152,12 @@ def unregister(event_id):
 def admin_events():
     if current_user.role != 'admin':
         return redirect(url_for('events.events'))
-    start, end = _get_two_week_range()
     events = (
-        Event.query.filter(Event.start_time >= start, Event.start_time <= end)
-        .order_by(Event.start_time)
+        Event.query.order_by(Event.start_time.desc())
         .all()
     )
     users = User.query.all()
-    return render_template('admin_events.html', events=events, users=users, start=start, end=end)
+    return render_template('admin_events.html', events=events, users=users)
 
 
 @event_bp.route('/admin/events/create', methods=['GET', 'POST'])
