@@ -70,6 +70,7 @@ def extend_pass(pass_id):
 
     p = Pass.query.get_or_404(pass_id)
     form = PassForm(obj=p)
+    form.submit.label.text = "Módosítás mentése"
     users = User.query.all()
     form.user_id.choices = [(u.id, u.username) for u in users]
     if form.validate_on_submit():
@@ -80,7 +81,8 @@ def extend_pass(pass_id):
         p.comment = form.comment.data
         p.user_id = form.user_id.data
         db.session.commit()
-        send_email(
+        send_event_email(
+            'pass_created',
             "Bérlet hosszabbítva",
             pass_created_email(p),
             p.user.email,
