@@ -37,6 +37,10 @@
                         </p>
                         <div class="d-flex gap-2 flex-wrap">
                             <a href="{{ url_for('events.edit_event', event_id=e.id) }}" class="btn btn-secondary btn-sm">Szerkesztés</a>
+                            <form method="post" action="{{ url_for('events.clone_event_weekly', event_id=e.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn-primary btn-sm" type="submit">Következő heti másolat</button>
+                            </form>
                             <a href="{{ url_for('events.activate_event', event_id=e.id) }}" class="btn btn-warning btn-sm">Esemény aktiválás</a>
                             <form method="post" action="{{ url_for('events.delete_event', event_id=e.id) }}">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
