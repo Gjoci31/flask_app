@@ -35,6 +35,15 @@ def _get_two_week_range():
     return start, end
 
 
+def _next_weekly_slot(start_time, end_limit_date):
+    candidate = start_time
+    while candidate.date() <= end_limit_date:
+        if candidate >= _now_local_naive():
+            return candidate
+        candidate += timedelta(days=7)
+    return None
+
+
 def _get_usable_pass(user_id):
     today = _now_local_naive().date()
     return (
@@ -280,6 +289,34 @@ def delete_event(event_id):
     db.session.commit()
     flash('Esemény törölve.', 'success')
     return redirect(url_for('events.admin_events', _anchor=f'event-{event_id}'))
+
+
+@event_bp.route('/admin/events/<int:event_id>/clone-weekly', methods=['POST'])
+@login_required
+def clone_event_weekly(event_id):
+    if current_user.role != 'admin':
+        return redirect(url_for('events.events'))
+
+    event = Event.query.get_or_404(event_id)
+    _, end_limit = _get_two_week_range()
+    next_start = _next_weekly_slot(event.start_time, end_limit)
+    if not next_start:
+        flash('A következő 2 hétben nincs létrehozható időpont ehhez az eseményhez.', 'warning')
+        return redirect(url_for('events.admin_events', _anchor=f'event-{event_id}'))
+
+    duration = event.end_time - event.start_time
+    new_event = Event(
+        name=event.name,
+        start_time=next_start,
+        end_time=next_start + duration,
+        capacity=event.capacity,
+        color=event.color,
+        cancellation_deadline_minutes=event.cancellation_deadline_minutes,
+    )
+    db.session.add(new_event)
+    db.session.commit()
+    flash(f'Esemény létrehozva: {new_event.formatted_time}', 'success')
+    return redirect(url_for('events.admin_events', _anchor=f'event-{new_event.id}'))
 
 
 @event_bp.route('/admin/events/<int:event_id>/activate')
