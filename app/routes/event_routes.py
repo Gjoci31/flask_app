@@ -131,10 +131,12 @@ def events():
         for reg in EventRegistration.query.filter_by(user_id=current_user.id)
     }
     cancellation_open = {}
+    signup_open = {}
     now_local = _now_local_naive()
     for e in upcoming_events:
         deadline = e.start_time - timedelta(minutes=e.cancellation_deadline_minutes)
         cancellation_open[e.id] = now_local < deadline
+        signup_open[e.id] = now_local < e.start_time
 
     participants = {
         e.id: "<br>".join(reg.user.username for reg in e.registrations) or "nincs"
@@ -154,6 +156,7 @@ def events():
         visible_start_hour=visible_start_hour,
         visible_end_hour=visible_end_hour,
         cancellation_open=cancellation_open,
+        signup_open=signup_open,
     )
 
 
@@ -161,7 +164,9 @@ def events():
 @login_required
 def signup(event_id):
     event = Event.query.get_or_404(event_id)
-    if event.spots_left <= 0:
+    if _now_local_naive() >= event.start_time:
+        flash('Az esemény már elkezdődött, nem lehet feliratkozni.', 'danger')
+    elif event.spots_left <= 0:
         flash('Nincs szabad hely.', 'danger')
     elif EventRegistration.query.filter_by(event_id=event_id, user_id=current_user.id).first():
         flash('Már jelentkeztél erre az eseményre.', 'warning')
@@ -276,7 +281,9 @@ def add_user(event_id):
         return redirect(url_for('events.events'))
     user_id = request.form.get('user_id', type=int)
     event = Event.query.get_or_404(event_id)
-    if event.spots_left <= 0:
+    if _now_local_naive() >= event.start_time:
+        flash('Az esemény már elkezdődött, nem lehet feliratkozni.', 'danger')
+    elif event.spots_left <= 0:
         flash('Nincs szabad hely.', 'danger')
     elif EventRegistration.query.filter_by(event_id=event_id, user_id=user_id).first():
         flash('A felhasználó már jelentkezett.', 'warning')

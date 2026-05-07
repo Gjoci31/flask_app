@@ -58,7 +58,7 @@
                                         {{ e.name }}
                                         {% if registrations.get(e.id) and cancellation_open.get(e.id) %}
                                             <a href="{{ url_for('events.unregister', event_id=e.id) }}" class="text-white">Leiratkozom</a>
-                                        {% elif not registrations.get(e.id) and e.spots_left > 0 %}
+                                        {% elif not registrations.get(e.id) and e.spots_left > 0 and signup_open.get(e.id) %}
                                             <a href="{{ url_for('events.signup', event_id=e.id) }}" class="text-white">Feliratkozom</a>
                                         {% endif %}
                                     {% endif %}
