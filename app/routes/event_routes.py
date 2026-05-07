@@ -97,13 +97,35 @@ def events():
                 'end_minute': end_minute,
                 'is_first': hour == start_hour,
             })
+    overlap_tolerance_minutes = 2
     for key, segs in events_map.items():
-        total = len(segs)
-        if total <= 0:
+        if not segs:
             continue
-        for idx, seg in enumerate(segs):
-            seg['width_pct'] = 100 / total
-            seg['left_pct'] = idx * seg['width_pct']
+
+        ordered_segs = sorted(segs, key=lambda seg: (seg['start_minute'], seg['end_minute']))
+        lane_end_minutes = []
+
+        for seg in ordered_segs:
+            lane_idx = None
+            for idx, lane_end in enumerate(lane_end_minutes):
+                if seg['start_minute'] >= lane_end - overlap_tolerance_minutes:
+                    lane_idx = idx
+                    break
+
+            if lane_idx is None:
+                lane_idx = len(lane_end_minutes)
+                lane_end_minutes.append(seg['end_minute'])
+            else:
+                lane_end_minutes[lane_idx] = max(lane_end_minutes[lane_idx], seg['end_minute'])
+
+            seg['lane_idx'] = lane_idx
+
+        lane_count = len(lane_end_minutes)
+        width_pct = 100 / lane_count if lane_count else 100
+
+        for seg in ordered_segs:
+            seg['width_pct'] = width_pct
+            seg['left_pct'] = seg['lane_idx'] * width_pct
     registrations = {
         reg.event_id: reg
         for reg in EventRegistration.query.filter_by(user_id=current_user.id)
