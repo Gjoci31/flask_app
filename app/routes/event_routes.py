@@ -345,6 +345,24 @@ def delete_event(event_id):
     return redirect(url_for('events.admin_events', _anchor=f'event-{event_id}'))
 
 
+
+
+@event_bp.route('/admin/events/delete-old', methods=['POST'])
+@login_required
+def delete_old_events():
+    """Delete events that ended more than 30 days ago."""
+    if current_user.role != 'admin':
+        return redirect(url_for('events.events'))
+
+    cutoff = _now_local_naive() - timedelta(days=30)
+    old_events = Event.query.filter(Event.end_time < cutoff).all()
+    deleted_count = len(old_events)
+    for event in old_events:
+        db.session.delete(event)
+    db.session.commit()
+
+    flash(f'{deleted_count} db 1 hónapnál régebben véget ért esemény törölve.', 'success')
+    return redirect(url_for('events.admin_events'))
 @event_bp.route('/admin/events/<int:event_id>/clone-weekly', methods=['POST'])
 @login_required
 def clone_event_weekly(event_id):
