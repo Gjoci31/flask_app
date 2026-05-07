@@ -83,10 +83,14 @@ def events():
         start_hour = e.start_time.hour
         end_hour = e.end_time.hour
         for hour in range(start_hour, end_hour + 1):
+            segment_start = e.start_time if hour == start_hour else e.start_time.replace(hour=hour, minute=0)
+            segment_end = e.end_time if hour == end_hour else e.start_time.replace(hour=hour, minute=0) + timedelta(hours=1)
+            if segment_start >= segment_end:
+                continue
             if hour < visible_start_hour or hour > visible_end_hour:
                 continue
-            start_minute = e.start_time.minute if hour == start_hour else 0
-            end_minute = e.end_time.minute if hour == end_hour else 60
+            start_minute = segment_start.minute
+            end_minute = segment_end.minute if segment_end.hour == hour else 60
             events_map.setdefault((day_idx, hour), []).append({
                 'event': e,
                 'start_minute': start_minute,
