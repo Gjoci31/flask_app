@@ -36,7 +36,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for hour in range(24) %}
+                {% for hour in range(visible_start_hour, visible_end_hour + 1) %}
                 <tr>
                     <th>{{ '%02d:00' % hour }}</th>
                     {% for day in days %}
@@ -51,12 +51,12 @@
                             {% for seg in evs %}
                                 {% set e = seg.event %}
                                 <div class="calendar-event{% if seg.is_first %} with-text{% endif %}"
-                                     style="top: {{ seg.start_minute }}px; height: {{ seg.end_minute - seg.start_minute }}px; background-color: {{ e.color_hex }};"
+                                     style="top: {{ seg.start_minute }}px; height: {{ seg.end_minute - seg.start_minute }}px; left: {{ seg.left_pct }}%; width: {{ seg.width_pct }}%; background-color: {{ e.color_hex }};"
                                      data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="top"
                                      data-bs-html="true" data-bs-content="{{ participants.get(e.id) }}">
                                     {% if seg.is_first %}
                                         {{ e.name }}
-                                        {% if registrations.get(e.id) %}
+                                        {% if registrations.get(e.id) and cancellation_open.get(e.id) %}
                                             <a href="{{ url_for('events.unregister', event_id=e.id) }}" class="text-white">Leiratkozom</a>
                                         {% elif e.spots_left > 0 %}
                                             <a href="{{ url_for('events.signup', event_id=e.id) }}" class="text-white">Feliratkozom</a>

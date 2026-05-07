@@ -73,12 +73,18 @@ def events():
         .all()
     )
     days = [start + timedelta(days=i) for i in range(14)]
+    visible_start_hour = 5
+    visible_end_hour = 22
     events_map = {}
     for e in upcoming_events:
         day_idx = (e.start_time.date() - start).days
+        if day_idx < 0 or day_idx >= 14:
+            continue
         start_hour = e.start_time.hour
         end_hour = e.end_time.hour
         for hour in range(start_hour, end_hour + 1):
+            if hour < visible_start_hour or hour > visible_end_hour:
+                continue
             start_minute = e.start_time.minute if hour == start_hour else 0
             end_minute = e.end_time.minute if hour == end_hour else 60
             events_map.setdefault((day_idx, hour), []).append({
@@ -87,10 +93,22 @@ def events():
                 'end_minute': end_minute,
                 'is_first': hour == start_hour,
             })
+    for key, segs in events_map.items():
+        total = len(segs)
+        if total <= 0:
+            continue
+        for idx, seg in enumerate(segs):
+            seg['width_pct'] = 100 / total
+            seg['left_pct'] = idx * seg['width_pct']
     registrations = {
         reg.event_id: reg
         for reg in EventRegistration.query.filter_by(user_id=current_user.id)
     }
+    cancellation_open = {}
+    now_local = _now_local_naive()
+    for e in upcoming_events:
+        deadline = e.start_time - timedelta(minutes=e.cancellation_deadline_minutes)
+        cancellation_open[e.id] = now_local < deadline
 
     participants = {
         e.id: "<br>".join(reg.user.username for reg in e.registrations) or "nincs"
@@ -107,6 +125,9 @@ def events():
         days=days,
         events_map=events_map,
         participants=participants,
+        visible_start_hour=visible_start_hour,
+        visible_end_hour=visible_end_hour,
+        cancellation_open=cancellation_open,
     )
 
 
